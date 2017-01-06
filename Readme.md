@@ -2,6 +2,8 @@
 
 An example application that demonstrates how to send SMS text messages using C and libCurl.  Requires a POSIX compliant system.
 
+Please read [our full article](https://www.twilio.com/docs/guides/how-to-send-sms-messages-in-c) for more information.
+
 ## Build example:
 
 <pre>
