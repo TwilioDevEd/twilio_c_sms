@@ -14,4 +14,3 @@ build: $(SOURCES)
 
 clean:
 	rm -rf c_sms
-
