@@ -29,7 +29,7 @@ bin/c_sms -a $account_sid -s $auth_token -t "+18005551212" -f "+18005551213" -m 
 
 ## Motivations
 
-Hopefully you can use this as a base for a larger project.  The send_message function should be relatively portable as long as you link libcurl.
+Hopefully you can use this as a base for a larger project.  The twilio_send_message function should be relatively portable as long as you link libcurl.
 
 ## Meta & Licensing
 
