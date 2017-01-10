@@ -8,15 +8,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <curl/curl.h>
 
-/* Defaults - 10K max memory for our strings, and a definition of boolean. */
-#define MAX_SIZE 10000
-typedef enum { false, true } bool;
+#include "twilio.h"
 
-
-int send_message(char *, char *, char *, char *, char *, bool);
-size_t null_write(char *ptr, size_t size, size_t nmemb, void *userdata);
 
 /*
 * Main is here to demonstrate the send_message function and take our command
@@ -31,9 +25,10 @@ int main(int argc, char *argv[])
         char *message = NULL;
         char *from_number = NULL;
         char *to_number = NULL;
+        char *picture_url = NULL;
         opterr = 0;
 
-        while ((cmd = getopt(argc, argv, "a:s:m:f:t:vh?")) != -1) {
+        while ((cmd = getopt(argc, argv, "a:s:m:f:t:p:vh?")) != -1) {
                 switch (cmd) {
                         case '?':
                         case 'h':
@@ -48,6 +43,8 @@ int main(int argc, char *argv[])
                                        "(ex: -t \"+18005551212\")\n");
                                 printf("-m: Message to send\t"
                                        "(ex: -m \"Hello, Twilio!\")\n");
+                                printf("-p: (Opt.) URL to Image\t"
+                                       "(ex: -p \"Hello, Twilio!\")\n");
                                 printf("-v: Verbose Mode\n");
                                 printf("-h: This help dialog\n");
                                 return 0;
@@ -65,6 +62,9 @@ int main(int argc, char *argv[])
                                 break;
                         case 't':
                                 to_number = optarg;
+                                break;
+                        case 'p':
+                                picture_url = optarg;
                                 break;
                         case 'v':
                                 verbose = true;
@@ -84,101 +84,22 @@ int main(int argc, char *argv[])
 
         if (verbose) {
                 printf("Sending a message with the Twilio C SMS Demo!\n"
-                       "libCurl version: %s\n"
                        "________________________________________"
-                       "________________________________________\n",
-                       curl_version());
+                       "________________________________________\n");
         }
 
-        return send_message(account_sid,
-                            auth_token,
-                            message,
-                            from_number,
-                            to_number,
-                            verbose);
-}
-
-
-/*
-* send_message should be portable if you have libcurl linked.
-*/
-int send_message(char *account_sid,
-                 char *auth_token,
-                 char *message,
-                 char *from_number,
-                 char *to_number,
-                 bool verbose)
-{
-
-        CURL *curl;
-        CURLcode res;
-        curl_global_init(CURL_GLOBAL_ALL);
-        curl = curl_easy_init();
-
-        char url[MAX_SIZE];
-        snprintf(url,
-                 sizeof(url),
-                 "%s%s%s",
-                 "https://api.twilio.com/2010-04-01/Accounts/",
-                 account_sid,
-                 "/Messages");
-
-        char parameters[MAX_SIZE];
-        snprintf(parameters,
-                 sizeof(parameters),
-                 "%s%s%s%s%s%s",
-                 "To=",
-                 to_number,
-                 "&From=",
-                 from_number,
-                 "&Body=",
-                 message);
-
-
-        curl_easy_setopt(curl, CURLOPT_POST, 1);
-        curl_easy_setopt(curl, CURLOPT_URL, url);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, parameters);
-        curl_easy_setopt(curl, CURLOPT_USERNAME, account_sid);
-        curl_easy_setopt(curl, CURLOPT_PASSWORD, auth_token);
-
-        if (!verbose) {
-                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, null_write);
-        }
-
-        res = curl_easy_perform(curl);
-        curl_easy_cleanup(curl);
-
-        long http_code = 0;
-        curl_easy_getinfo (curl, CURLINFO_RESPONSE_CODE, &http_code);
-
-        if (res != CURLE_OK) {
-                if (verbose) {
-                        fprintf(stderr,
-                                "SMS send failed: %s.\n",
-                                curl_easy_strerror(res));
-                }
-                return -1;
-        } else if (http_code != 200 && http_code != 201) {
-                if (verbose) {
-                        fprintf(stderr,
-                                "SMS send failed, HTTP Status Code: %ld.\n",
-                                http_code);
-                }
-                return -1;
+        if (twilio_send_message(account_sid,
+                                auth_token,
+                                message,
+                                from_number,
+                                to_number,
+                                picture_url,
+                                verbose
+        ) == true) {
+            return 0;
         } else {
-                if (verbose) {
-                        fprintf(stderr,
-                                "SMS sent successfully!\n");
-                }
-                return 0;
+            return -1;
         }
 
-}
 
-/*
-* null_write is a portable way to ignore the response from curl_easy_perform
-*/
-size_t null_write(char *ptr, size_t size, size_t nmemb, void *userdata)
-{
-    return size;
 }
