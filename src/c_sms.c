@@ -16,6 +16,7 @@ typedef enum { false, true } bool;
 
 
 int send_message(char *, char *, char *, char *, char *, bool);
+size_t null_write(char *ptr, size_t size, size_t nmemb, void *userdata);
 
 /*
 * Main is here to demonstrate the send_message function and take our command
@@ -141,7 +142,7 @@ int send_message(char *account_sid,
         curl_easy_setopt(curl, CURLOPT_PASSWORD, auth_token);
 
         if (!verbose) {
-                curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, null_write);
         }
 
         res = curl_easy_perform(curl);
@@ -172,4 +173,12 @@ int send_message(char *account_sid,
                 return 0;
         }
 
+}
+
+/*
+* null_write is a portable way to ignore the response from curl_easy_perform
+*/
+size_t null_write(char *ptr, size_t size, size_t nmemb, void *userdata)
+{
+    return size;
 }
